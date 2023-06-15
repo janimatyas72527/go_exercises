@@ -15,7 +15,7 @@ func main() {
 	file_ptr := flag.String("file", "", "Specifies the source file.")
 	flag.Parse()
 
-	_, err_file_info := os.Stat(*file_ptr)
+	file_info, err_file_info := os.Stat(*file_ptr)
 
 	if err_file_info != nil {
 		panic(err_file_info)
@@ -23,7 +23,7 @@ func main() {
 
 	mux := defaultMux()
 
-	file_ext := strings.ToLower(path.Ext(*file_ptr))
+	file_ext := strings.ToLower(strings.TrimPrefix(path.Ext(*file_ptr), "."))
 
 	f, err_f := os.Open(*file_ptr)
 
@@ -31,7 +31,7 @@ func main() {
 		log.Fatal(err_f)
 	}
 
-	var content []byte
+	content := make([]byte, file_info.Size())
 
 	_, err_content := f.Read(content)
 
@@ -56,7 +56,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-	case "json:":
+	case "json":
 		// Build the JSONHandler using the mapHandler as the
 		// fallback
 		handler, err = exercise_2.JSONHandler(content, mapHandler)
@@ -65,7 +65,7 @@ func main() {
 		}
 	}
 
-	fmt.Println("Starting the", strings.ToUpper(file_ext), "-configured server on :8080")
+	fmt.Print("Starting the ", strings.ToUpper(file_ext), "-configured server on :8080\n")
 	http.ListenAndServe(":8080", handler)
 }
 

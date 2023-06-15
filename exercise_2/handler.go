@@ -2,7 +2,9 @@ package exercise_2
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -25,14 +27,28 @@ func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.Handl
 }
 
 // TODO: Write doc comment
+type ParsedEntry struct {
+	Path string `yaml:"path" json:"path"`
+	Url  string `yaml:"url" json:"url"`
+}
+
+// TODO: Write doc comment
+func (pe ParsedEntry) String() string {
+	return fmt.Sprintf("[Path: %s, Url: %s]", pe.Path, pe.Url)
+}
+
+// TODO: Write doc comment
 type ParsedJsonType struct {
 	Mappings []ParsedEntry `json:"mappings"`
 }
 
 // TODO: Write doc comment
-type ParsedEntry struct {
-	Path string `yaml:"path" json:"path"`
-	Url  string `yaml:"url" json:"url"`
+func (pjt ParsedJsonType) String() string {
+	var items []string
+	for _, item := range pjt.Mappings {
+		items = append(items, item.String())
+	}
+	return fmt.Sprintf("[Mappings: [%s]]", strings.Join(items, ","))
 }
 
 // TODO: Write doc comment
@@ -68,6 +84,14 @@ func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
 	var parsedEntries []ParsedEntry
 
 	err := yaml.Unmarshal(yml, &parsedEntries)
+
+	var items []string
+
+	for _, item := range parsedEntries {
+		items = append(items, item.String())
+	}
+	fmt.Printf("[%s]\n", strings.Join(items, ","))
+
 	return processParsedEntries(parsedEntries, fallback, err)
 }
 
@@ -95,5 +119,6 @@ func JSONHandler(jsn []byte, fallback http.Handler) (http.HandlerFunc, error) {
 	var parsedJson ParsedJsonType
 
 	err := json.Unmarshal(jsn, &parsedJson)
+	fmt.Println(parsedJson.String())
 	return processParsedEntries(parsedJson.Mappings, fallback, err)
 }
