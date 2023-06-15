@@ -3,3 +3,4 @@ go 1.20
 use ./exercise_1
 use ./exercise_2
 use ./exercise_3
+use ./exercise_4
