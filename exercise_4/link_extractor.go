@@ -6,13 +6,17 @@ import (
 	"os"
 	"strings"
 
+	"github.com/spf13/afero"
 	"golang.org/x/net/html"
 )
 
 // Collect content recursively
 func CollectContent(node *html.Node, sb *strings.Builder) {
 	if node.Type == html.TextNode {
-		sb.WriteString(" ") // Space before data
+		// Add space only when there is text already
+		if sb.Len() > 0 {
+			sb.WriteString(" ") // Space before data
+		}
 
 		// Remove newline and tabs from text
 		text := strings.ReplaceAll(node.Data, "\r", "")
@@ -38,12 +42,12 @@ func GetHref(attr []html.Attribute) string {
 	return ""
 }
 
-func WriteData(href string, content string, tf *os.File) {
+func WriteData(href string, content string, tf afero.File) {
 	tf.WriteString(fmt.Sprint("Link {\n\tHref: ", href, "\n\tText:", content, "\n}\n"))
 }
 
 // Process nodes recursively
-func ProcessNode(node *html.Node, tf *os.File) {
+func ProcessNode(node *html.Node, tf afero.File) {
 	if node.Type == html.ElementNode && node.Data == "a" {
 		var sb strings.Builder
 
@@ -61,21 +65,19 @@ func ProcessNode(node *html.Node, tf *os.File) {
 	}
 }
 
-func ExtractLinks(source_url string, target_file string) {
+func ExtractLinks(source_url string, target_file string, fs afero.Fs) {
 	response, response_err := http.Get(source_url)
 
 	if response_err != nil {
 		panic(response_err)
 	}
 
-	document, document_err := html.Parse(response.Body)
+	// Parsing succeeds even if body is completely invalid
+	document, _ := html.Parse(response.Body)
 
 	response.Body.Close()
-	if document_err != nil {
-		panic(document_err)
-	}
 
-	tf, tf_err := os.OpenFile(target_file, os.O_CREATE+os.O_APPEND, os.ModeAppend)
+	tf, tf_err := fs.OpenFile(target_file, os.O_CREATE+os.O_APPEND, os.ModeAppend)
 
 	if tf_err != nil {
 		panic(tf_err)
